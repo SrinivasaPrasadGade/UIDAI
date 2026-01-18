@@ -26,78 +26,122 @@ PLOTS_DIR = "processed_data/plots"
 def inject_custom_css():
     st.markdown("""
     <style>
-        /* General Font */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        /* --- GLOBAL & FONTS --- */
+        @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap');
         
         html, body, [class*="css"] {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'SF Pro Display', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
             color: #1d1d1f;
         }
-        
-        /* Background - Subtle Gradient */
-        .stApp {
-            background: #f5f5f7; /* Apple Light Gray */
-        }
 
-        /* CARD STYLE - Glassmorphism */
-        div[data-testid="metric-container"] {
-            background: rgba(255, 255, 255, 0.65);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 18px;
-            padding: 20px;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        /* --- APP BACKGROUND --- */
+        .stApp {
+            background-color: #F5F5F7; /* Apple System Light Gray */
         }
         
+        /* --- SIDEBAR --- */
+        section[data-testid="stSidebar"] {
+            background-color: #ffffff; /* Clean White Sidebar */
+            border-right: 1px solid rgba(0,0,0,0.05); /* Subtle separator */
+        }
+        section[data-testid="stSidebar"] h1 {
+            color: #1d1d1f !important;
+            font-weight: 600;
+        }
+        
+        /* --- METRIC CARDS (WIDGETS) --- */
+        div[data-testid="metric-container"] {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 24px 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0,0,0,0.02); /* Soft layered shadow */
+            border: 1px solid rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+        }
         div[data-testid="metric-container"]:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-        }
-
-        /* Sidebar - Glassy Dark Mockup */
-        section[data-testid="stSidebar"] {
-            background-color: rgba(28, 28, 30, 0.95); /* Apple Dark Gray */
-            color: white;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
         }
         
-        /* Buttons - Pill Shape & Smooth */
-        div.stButton > button {
-            background-color: #007aff; /* Apple Blue */
-            color: white;
-            border-radius: 20px;
-            border: none;
-            padding: 10px 24px;
+        /* Metric Labels */
+        div[data-testid="metric-container"] > label {
+            font-size: 14px;
             font-weight: 500;
-            transition: all 0.3s ease;
+            color: #86868b; /* Apple Secondary Text */
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        
-        div.stButton > button:hover {
-            background-color: #005bb5;
-            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
-            transform: scale(1.02);
-        }
-
-        /* Headings */
-        h1, h2, h3 {
+        /* Metric Values */
+        div[data-testid="metric-container"] div[data-testid="stMetricValue"] {
+            font-size: 32px;
             font-weight: 600;
-            letter-spacing: -0.5px;
-        }
-        
-        h1 {
-            background: -webkit-linear-gradient(45deg, #1d1d1f, #48484a);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #1d1d1f;
         }
 
-        /* Dataframes - Clean Look */
+        /* --- CHARTS & CONTAINERS --- */
+        .block-container {
+            padding-top: 3rem;
+            padding-bottom: 3rem;
+        }
+        
+        /* Chart Backgrounds - Make them blend */
+        div[class*="stChart"] {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+        /* --- BUTTONS --- */
+        div.stButton > button {
+            background-color: #0071e3; /* Classic Apple Blue */
+            color: white;
+            border-radius: 980px; /* Pill shape */
+            border: none;
+            padding: 12px 28px;
+            font-size: 16px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0, 113, 227, 0.2);
+            transition: all 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        div.stButton > button:hover {
+            background-color: #0077ED;
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 113, 227, 0.4);
+        }
+        div.stButton > button:active {
+            transform: scale(0.98);
+        }
+        
+        /* --- HEADERS --- */
+        h1, h2, h3 {
+            font-family: 'SF Pro Display', 'Inter', sans-serif;
+            letter-spacing: -0.02em;
+        }
+        h1 {
+            font-weight: 700;
+        }
+        h2 {
+            font-weight: 600;
+            margin-top: 1.5rem;
+        }
+        h3 {
+            font-weight: 500;
+            color: #1d1d1f;
+        }
+
+        /* --- DATAFRAME --- */
         div[data-testid="stDataFrame"] {
+            border: 1px solid #e5e5e5;
             border-radius: 12px;
             overflow: hidden;
-            border: 1px solid rgba(0,0,0,0.05);
         }
-        
+
+        /* --- NOTIFICATIONS --- */
+        .stAlert {
+            border-radius: 16px;
+        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -124,11 +168,11 @@ def load_model():
     return joblib.load(MODEL_FILE)
 
 # --- Navigation ---
-st.sidebar.title(" UIDAI Analytics")
+st.sidebar.title("UIDAI Analytics")
 page = st.sidebar.radio("Navigation", ["Dashboard", "Data Explorer", "Predictor"], label_visibility="collapsed")
 
 st.sidebar.markdown("---")
-st.sidebar.info("Aadhaar Data Analysis System v1.0")
+st.sidebar.caption("Aadhaar Data Analysis System v1.0")
 
 # --- Page: Dashboard ---
 if page == "Dashboard":
