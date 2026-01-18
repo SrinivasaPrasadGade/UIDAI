@@ -6,6 +6,8 @@ import joblib
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
+import viz_components as viz
+
 
 # --- Configuration ---
 st.set_page_config(
@@ -180,41 +182,51 @@ if page == "Dashboard":
     
     df = load_data()
     if df is not None:
-        # Top Metrics Row
+        # --- 1. Top Metrics with Sparklines ---
+        st.markdown("### Key Performance Indicators")
         c1, c2, c3, c4 = st.columns(4)
         
         total_enrolment = df['enrolment_total'].sum()
         total_updates = df['demo_update_total'].sum() + df['bio_update_total'].sum()
         avg_daily_activity = df['total_activity'].mean()
         
-        c1.metric("Total Enrolments", f"{total_enrolment:,.0f}")
-        c2.metric("Total Updates", f"{total_updates:,.0f}")
-        c3.metric("Avg Daily Activity", f"{avg_daily_activity:.1f}")
+        # Prepare sparkline data (last 30 days for trend)
+        daily_trend = df.groupby('date')['total_activity'].sum()
+        sparkline_data = daily_trend.tail(30).values
+        
+        with c1:
+            viz.render_kpi_card("Total Enrolments", total_enrolment, None, sparkline_data, color="#3b82f6")
+        
+        with c2:
+            viz.render_kpi_card("Total Updates", total_updates, None, sparkline_data, color="#8b5cf6")
+            
+        with c3:
+           viz.render_kpi_card("Avg Daily Activity", avg_daily_activity, None, sparkline_data, color="#10b981")
         
         # Anomalies Metric
         anom_df = load_anomalies()
         anom_count = len(anom_df) if anom_df is not None else 0
-        c4.metric("Anomalies Detected", f"{anom_count:,.0f}", delta="-High Risk", delta_color="inverse")
+        with c4:
+             viz.render_kpi_card("Anomalies Detected", anom_count, None, None, color="#ef4444")
         
+        st.markdown("---")
+        
+        # --- 2. Activity Trends ---
         st.markdown("### Activity Trends")
-        # Time Series plot
-        daily_trend = df.groupby('date')[['enrolment_total', 'demo_update_total', 'bio_update_total']].sum()
-        st.line_chart(daily_trend)
+        viz.render_activity_trends(df)
         
-        col_left, col_right = st.columns(2)
+        st.markdown("---")
+        
+        # --- 3. Geographic & Ratio Analysis ---
+        col_left, col_right = st.columns([1.2, 1])
         
         with col_left:
             st.markdown("### Regional Distribution")
-            # State Aggregate
-            state_agg = df.groupby('state')['enrolment_total'].sum().sort_values(ascending=False).head(10)
-            st.bar_chart(state_agg)
+            viz.render_regional_map(df)
             
         with col_right:
             st.markdown("### Update Ratios")
-            # Scatter of Enrolment vs Updates
-            # Sample to avoid lag
-            chart_data = df.sample(2000)[['enrolment_total', 'demo_update_total']]
-            st.scatter_chart(chart_data)
+            viz.render_update_ratios(df)
 
     else:
         st.error(f"Data file not found at {DATA_FILE}. Please run data pipeline first.")
