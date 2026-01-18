@@ -18,11 +18,14 @@ st.set_page_config(
 )
 
 # Paths
-DATA_FILE = "processed_data/model_ready_data.csv"
-MODEL_FILE = "processed_data/model_rf.pkl"
-ANOMALIES_FILE = "processed_data/anomalies.csv"
-CLUSTERS_FILE = "processed_data/pincode_clusters.csv"
-PLOTS_DIR = "processed_data/plots"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROCESSED_DATA_DIR = os.path.join(BASE_DIR, "processed_data")
+
+DATA_FILE = os.path.join(PROCESSED_DATA_DIR, "model_ready_data.csv")
+MODEL_FILE = os.path.join(PROCESSED_DATA_DIR, "model_rf.pkl")
+ANOMALIES_FILE = os.path.join(PROCESSED_DATA_DIR, "anomalies.csv")
+CLUSTERS_FILE = os.path.join(PROCESSED_DATA_DIR, "pincode_clusters.csv")
+PLOTS_DIR = os.path.join(PROCESSED_DATA_DIR, "plots")
 
 # --- Custom Apple-Inspired CSS ---
 def inject_custom_css():
@@ -264,65 +267,146 @@ elif page == "Data Explorer":
 # --- Page: Predictor ---
 elif page == "Predictor":
     st.title("Dropout Risk Predictor")
-    st.markdown("Estimate the `Update-to-Enrolment Ratio` for a hypothetical scenario. A high ratio (>1.0) implies potential initial enrolment failures.")
+    st.markdown("Estimate the `Update-to-Enrolment Ratio` for a hypothetical scenario.")
     
     model = load_model()
     
     if model:
-        # Input Form
+        # --- 1. Dynamic Feature Detection ---
+        # We try to get the feature names the model was trained on
+        model_features = getattr(model, "feature_names_in_", None)
+        
         with st.form("prediction_form"):
+            st.subheader("Scenario Inputs")
             c1, c2 = st.columns(2)
             with c1:
-                age_0_5 = st.number_input("Enrolments (Age 0-5)", min_value=0, value=10)
-                age_5_17 = st.number_input("Enrolments (Age 5-17)", min_value=0, value=20)
-                age_18_greater = st.number_input("Enrolments (Age 18+)", min_value=0, value=50)
+                # Inputs - Adjust names here if you know the exact CSV column headers!
+                p1 = st.number_input("Enrolments (Age 0-5)", min_value=0, value=10)
+                p2 = st.number_input("Enrolments (Age 5-17)", min_value=0, value=20)
+                p3 = st.number_input("Enrolments (Age 18+)", min_value=0, value=50)
             
             with c2:
-                # We need lag features too, but for a simple demo, we can ask for 'Historic Average'
                 hist_avg = st.number_input("Historic 7-Day Avg Enrolment", min_value=0, value=30)
                 state_freq = st.slider("State Activity Index (0-1)", 0.0, 1.0, 0.5)
 
+            # Debug Toggle
+            st.markdown("---")
+            scenario_type = st.radio(
+                "Center Scenario Type",
+                ["New Enrolment Camp (Expect Low Updates)", "Permanent Center (Expect High Updates)"],
+                horizontal=True
+            )
+
+            show_debug = st.checkbox("Show Debug/Feature Info", value=False)
             submit = st.form_submit_button("Analyze Risk")
             
         if submit:
-            # Construct input vector matching model features (approximate for demo)
-            # Features: ['age_0_5', 'age_5_17', 'age_18_greater', ... 'enrolment_rolling_mean_7', ...]
-            # We'll fill missing technical features with reasonable defaults/zeros for the demo
+            st.info("Processing prediction request...")
             
-            input_data = pd.DataFrame({
-                'age_0_5': [age_0_5],
-                'age_5_17': [age_5_17],
-                'age_18_greater': [age_18_greater],
-                'demo_age_5_17': [0], 'demo_age_17_': [0], # Assume 0 for interaction terms
-                'bio_age_5_17': [0], 'bio_age_17_': [0],
-                'enrolment_lag_7': [hist_avg], # Approximation
+            # Logic: If it's a "Camp", updates are rare (5% of enrolments). 
+            # If it's a "Permanent Center", updates are common (150% of enrolments).
+            if "Camp" in scenario_type:
+                update_multiplier = 0.05 
+            else:
+                update_multiplier = 1.5
+
+            # Calculate implied updates based on the scenario
+            # (The model needs these counts to understand the context)
+            implied_updates_5_17 = p2 * update_multiplier
+            implied_updates_18_plus = p3 * update_multiplier
+            
+            # Total implied activity = Enrolments + Updates
+            total_current_activity = (p1 + p2 + p3) + implied_updates_5_17 + implied_updates_18_plus
+
+            # --- 2. Construct Raw Input Dictionary ---
+            # NOTE: These keys must match what 'feature_engineering.py' outputted.
+            # If your raw data had 'enrolment_0_5', change 'age_0_5' to that below.
+            raw_input = {
+                'age_0_5': [p1],
+                'age_5_17': [p2],
+                'age_18_greater': [p3],
+                'enrolment_total': [p1 + p2 + p3],
+                
+                # We now use the multiplier to send "Low Update" signals to the model
+                'demo_age_5_17': [implied_updates_5_17 * 0.6], # Split updates into demo/bio 
+                'demo_age_17_': [implied_updates_18_plus * 0.6], 
+                'bio_age_5_17': [implied_updates_5_17 * 0.4], 
+                'bio_age_17_': [implied_updates_18_plus * 0.4],
+                
+                # Lags - We assume history matches current trend for the rolling mean
+                'enrolment_lag_7': [hist_avg],
                 'enrolment_lag_30': [hist_avg],
                 'enrolment_rolling_mean_7': [hist_avg],
                 'enrolment_rolling_mean_30': [hist_avg],
-                'total_activity_rolling_mean_7': [hist_avg + 10],
+                
+                # Crucial: Total activity must reflect the scenario
+                # If we tell the model "Total Activity is high" but "Enrolment is low", it forces a High Ratio.
+                # Here we balance it.
+                'total_activity_rolling_mean_7': [hist_avg * (1 + update_multiplier)],
+                
+                # Context Features
                 'state_freq': [state_freq],
-                'district_freq': [0.01],
-                'month': [6], # Default mid-year
+                'district_freq': [0.01], # Default low freq for unknown district
+                'month': [6],
                 'day_of_week': [2],
                 'is_weekend': [0]
-            })
+            }
             
-            prediction = model.predict(input_data)[0]
+            input_df = pd.DataFrame(raw_input)
+
+            # --- 3. Align with Model Features ---
+            final_input = input_df.copy()
             
-            st.markdown("### Risk Analysis Result")
-            
-            col_metric, col_gauge = st.columns([1, 2])
-            
-            with col_metric:
-                st.metric("Predicted Ratio", f"{prediction:.2f}")
-            
-            with col_gauge:
-                if prediction < 0.5:
-                    st.success("Low Risk: Process seems healthy.")
-                elif prediction < 1.0:
-                    st.warning("Moderate Risk: Monitor for quality issues.")
-                else:
-                    st.error("High Risk: Potential systemic dropouts detected.")
+            if model_features is not None:
+                # Create a dataframe with all zeros for expected columns
+                final_input = pd.DataFrame(0, index=[0], columns=model_features)
+                
+                # Fill known values where names match
+                aligned_cols = []
+                missing_cols = []
+                
+                for col in model_features:
+                    if col in input_df.columns:
+                        final_input[col] = input_df[col]
+                        aligned_cols.append(col)
+                    else:
+                        missing_cols.append(col)
+                
+                # --- Debugging Output ---
+                if show_debug:
+                    st.warning("⚠️ Feature Alignment Debugger")
+                    with st.expander("Click to see feature details", expanded=True):
+                        st.write(f"**Model expects {len(model_features)} features.**")
+                        st.write(f"**Successfully Matched ({len(aligned_cols)}):**", aligned_cols)
+                        st.error(f"**Missing Inputs (Filled with 0):** {missing_cols}")
+                        st.caption("If your key inputs are in 'Missing Inputs', rename the keys in 'raw_input' dictionary to match.")
+
+            # --- 4. Predict ---
+            try:
+                prediction = model.predict(final_input)[0]
+                
+                st.markdown("### Risk Analysis Result")
+                col_metric, col_error, col_gauge = st.columns([1, 1, 1.5])
+                
+                with col_metric:
+                    st.metric("Predicted Ratio", f"{prediction:.2f}")
+
+                with col_error:
+                    error_pct = prediction * 100
+                    st.metric("Update vs Enrolment Ratio", f"{error_pct:.1f}%")
+                
+                with col_gauge:
+                    if prediction < 0.5:
+                        st.success("Low Risk: Process seems healthy.")
+                    elif prediction < 1.0:
+                        st.warning("Moderate Risk: Monitor for quality issues.")
+                    else:
+                        st.error("High Risk: Potential systemic dropouts detected.")
+                        
+            except Exception as e:
+                st.error(f"Prediction Error: {str(e)}")
+                if show_debug:
+                    st.exception(e)
                     
     else:
         st.warning("Model file not found. Please train the model first.")

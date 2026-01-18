@@ -8,9 +8,11 @@ from sklearn.cluster import KMeans
 from sklearn.ensemble import IsolationForest
 
 # --- Configuration ---
-DATA_FILE = "processed_data/master_aadhar_data.csv"
-PLOTS_DIR = "processed_data/plots"
-ANOMALIES_FILE = "processed_data/anomalies.csv"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROCESSED_DATA_DIR = os.path.join(BASE_DIR, "processed_data")
+DATA_FILE = os.path.join(PROCESSED_DATA_DIR, "master_aadhar_data.csv")
+PLOTS_DIR = os.path.join(PROCESSED_DATA_DIR, "plots")
+ANOMALIES_FILE = os.path.join(PROCESSED_DATA_DIR, "anomalies.csv")
 
 def ensure_dir(directory):
     if not os.path.exists(directory):
@@ -51,7 +53,7 @@ def perform_clustering(df):
     print(f"Saved {filename}")
     
     # Save clustered data
-    pincode_df.to_csv(os.path.join("processed_data", "pincode_clusters.csv"), index=False)
+    pincode_df.to_csv(os.path.join(PROCESSED_DATA_DIR, "pincode_clusters.csv"), index=False)
     print(f"Saved cluster assignments to processed_data/pincode_clusters.csv")
 
 def perform_anomaly_detection(df):

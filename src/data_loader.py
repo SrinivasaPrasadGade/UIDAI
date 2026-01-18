@@ -4,8 +4,8 @@ import glob
 import os
 
 # --- Configuration ---
-DATA_DIR = "."
-PROCESSED_DIR = "./processed_data"
+DATA_DIR = os.path.dirname(os.path.abspath(__file__))
+PROCESSED_DIR = os.path.join(DATA_DIR, "processed_data")
 ENROLMENT_DIR = os.path.join(DATA_DIR, "api_data_aadhar_enrolment")
 DEMOGRAPHIC_DIR = os.path.join(DATA_DIR, "api_data_aadhar_demographic")
 BIOMETRIC_DIR = os.path.join(DATA_DIR, "api_data_aadhar_biometric")

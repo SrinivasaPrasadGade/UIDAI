@@ -10,11 +10,14 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import joblib
 
 # --- Configuration ---
-DATA_FILE = "processed_data/model_ready_data.csv"
-MODEL_FILE = "processed_data/model_rf.pkl"
-METRICS_FILE = "processed_data/model_metrics.txt"
-PLOTS_DIR = "processed_data/plots"
-PREDICTIONS_FILE = "processed_data/model_predictions.csv"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROCESSED_DATA_DIR = os.path.join(BASE_DIR, "processed_data")
+
+DATA_FILE = os.path.join(PROCESSED_DATA_DIR, "model_ready_data.csv")
+MODEL_FILE = os.path.join(PROCESSED_DATA_DIR, "model_rf.pkl")
+METRICS_FILE = os.path.join(PROCESSED_DATA_DIR, "model_metrics.txt")
+PLOTS_DIR = os.path.join(PROCESSED_DATA_DIR, "plots")
+PREDICTIONS_FILE = os.path.join(PROCESSED_DATA_DIR, "model_predictions.csv")
 
 def ensure_dir(directory):
     if not os.path.exists(directory):

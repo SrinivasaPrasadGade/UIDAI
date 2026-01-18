@@ -5,8 +5,9 @@ import seaborn as sns
 import os
 
 # --- Configuration ---
-DATA_FILE = "processed_data/master_aadhar_data.csv"
-PLOTS_DIR = "processed_data/plots"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_FILE = os.path.join(BASE_DIR, "processed_data", "master_aadhar_data.csv")
+PLOTS_DIR = os.path.join(BASE_DIR, "processed_data", "plots")
 
 def ensure_dir(directory):
     if not os.path.exists(directory):

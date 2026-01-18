@@ -3,8 +3,9 @@ import pandas as pd
 import os
 
 # --- Configuration ---
-DATA_FILE = "processed_data/master_aadhar_data.csv"
-OUTPUT_FILE = "processed_data/model_ready_data.csv"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_FILE = os.path.join(BASE_DIR, "processed_data", "master_aadhar_data.csv")
+OUTPUT_FILE = os.path.join(BASE_DIR, "processed_data", "model_ready_data.csv")
 
 def load_data():
     if not os.path.exists(DATA_FILE):

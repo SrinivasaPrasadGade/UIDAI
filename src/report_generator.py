@@ -4,10 +4,14 @@ import os
 import datetime
 
 # --- Configuration ---
-OUTPUT_PDF = "UIDAI_Aadhaar_Analysis_Report.pdf"
-PLOTS_DIR = "processed_data/plots"
-METRICS_FILE = "processed_data/model_metrics.txt"
-ANOMALIES_FILE = "processed_data/anomalies.csv"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+OUTPUT_PDF = os.path.join(PROJECT_ROOT, "UIDAI_Aadhaar_Analysis_Report.pdf")
+PROCESSED_DATA_DIR = os.path.join(BASE_DIR, "processed_data")
+
+PLOTS_DIR = os.path.join(PROCESSED_DATA_DIR, "plots")
+METRICS_FILE = os.path.join(PROCESSED_DATA_DIR, "model_metrics.txt")
+ANOMALIES_FILE = os.path.join(PROCESSED_DATA_DIR, "anomalies.csv")
 
 class PDF(FPDF):
     def header(self):
@@ -45,7 +49,7 @@ def create_report():
         "Key findings include:\n"
         "- Identified daily activity patterns and regional disparities.\n"
         "- Discovered high correlation between demographic updates and enrolments in specific clusters.\n"
-        "- Developed a Random Forest model with high predictive accuracy (R2 ~ 0.98) to forecast update ratios, "
+        "- Developed an Optimized Random Forest model with robust accuracy (R2 ~ 0.96) to forecast update ratios, "
         "helping targeted intervention."
     )
     pdf.multi_cell(0, 10, summary_text)
@@ -53,7 +57,7 @@ def create_report():
 
     # --- Data Insights (EDA) ---
     pdf.set_font('Arial', 'B', 16)
-    pdf.cell(0, 10, '2. specific Insights from Data', 0, 1, 'L')
+    pdf.cell(0, 10, '2. Specific Insights from Data', 0, 1, 'L')
     
     # Helper to add image if exists
     def add_plot(title, filename, description):
@@ -109,7 +113,7 @@ def create_report():
     pdf.set_font('Arial', 'B', 16)
     pdf.cell(0, 10, '4. Predictive Modeling', 0, 1, 'L')
     
-    metrics_text = "Model: Random Forest Regressor\n"
+    metrics_text = "Model: Optimized Random Forest Regressor\n"
     if os.path.exists(METRICS_FILE):
         with open(METRICS_FILE, "r") as f:
             metrics_text += f.read()
@@ -121,7 +125,7 @@ def create_report():
     
     pdf.ln(5)
     pdf.set_font('Arial', '', 12)
-    pdf.multi_cell(0, 10, "Feature Importance Analysis highlights the key drivers of the prediction:")
+    pdf.multi_cell(0, 10, "Feature Importance Analysis confirms that demographic activity in older age groups is the primary driver of the update-to-enrolment ratio.")
     
     if os.path.exists(os.path.join(PLOTS_DIR, "feature_importance.png")):
          pdf.image(os.path.join(PLOTS_DIR, "feature_importance.png"), w=170)
@@ -132,10 +136,11 @@ def create_report():
     pdf.cell(0, 10, '5. Conclusion & Recommendations', 0, 1, 'L')
     pdf.set_font('Arial', '', 12)
     rec_text = (
-        "1. Focus verification resources on the identified anomalies to reduce fraud or errors.\n"
-        "2. Use the 'Update-to-Enrolment' ratio forecast to allocate staff dynamically.\n"
-        "3. Investigate high-dropout clusters identified in the regional analysis.\n\n"
-        "This framework provides a data-driven foundation for minimizing dropouts and optimizing the enrolment lifecycle."
+        "1. **Context Matters**: A high 'Update-to-Enrolment' ratio (>1.0) is a risk signal ONLY for 'New Enrolment Camps'. "
+        "For Permanent Centers, a high ratio is operationally normal.\n"
+        "2. **Targeted Verification**: Focus outcome audits on centers flagged as 'Camps' that show permanent-center-like update behaviors.\n"
+        "3. **Dynamic Resource Allocation**: Use the forecast to predict staff needs for biometric updates in permanent centers.\n\n"
+        "The Optimized Random Forest model provides a reliable, generalized baseline to support these operational decisions."
     )
     pdf.multi_cell(0, 10, rec_text)
 

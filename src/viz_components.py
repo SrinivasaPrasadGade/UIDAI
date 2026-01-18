@@ -16,12 +16,13 @@ def render_kpi_card(title, value, delta, sparkline_data=None, color="blue"):
     fig = go.Figure()
 
     # Indicator (Big Number)
+    # Indicator (Big Number)
     fig.add_trace(go.Indicator(
         mode = "number+delta",
         value = value,
         delta = {'reference': delta, 'relative': False, 'valueformat': '.0f'} if delta else None,
-        number = {'font': {'size': 40, 'color': '#1d1d1f'}},
-        domain = {'x': [0, 1], 'y': [0.5, 1]}
+        number = {'font': {'size': 34, 'color': '#1d1d1f'}},
+        domain = {'x': [0, 1], 'y': [0.3, 1]}
     ))
 
     # Sparkline (if data provided)
@@ -32,18 +33,16 @@ def render_kpi_card(title, value, delta, sparkline_data=None, color="blue"):
             line=dict(color=color, width=2),
             hoverinfo='skip'
         ))
-        
-        # clean up axes for sparkline look
-        fig.update_xaxes(visible=False, fixedrange=True)
-        fig.update_yaxes(visible=False, fixedrange=True)
 
     fig.update_layout(
-        height=150,
-        margin=dict(l=10, r=10, t=30, b=10),
+        height=140,
+        margin=dict(l=10, r=10, t=30, b=0),
         template="plotly_white",
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        title={'text': title, 'y':0.9, 'x':0.5, 'xanchor': 'center', 'yanchor': 'top', 'font': {'size': 14, 'color': '#86868b'}}
+        title={'text': title, 'y':0.95, 'x':0.5, 'xanchor': 'center', 'yanchor': 'top', 'font': {'size': 14, 'color': '#86868b'}},
+        xaxis={'visible': False, 'fixedrange': True},
+        yaxis={'visible': False, 'fixedrange': True, 'domain': [0, 0.25]}
     )
 
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
